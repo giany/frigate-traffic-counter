@@ -1,0 +1,69 @@
+services:
+  frigate:
+    container_name: frigate
+    image: ghcr.io/blakeblackshear/frigate:stable-standard-arm64
+    restart: unless-stopped
+    shm_size: "512mb"
+
+    depends_on:
+      - mosquitto
+
+    volumes:
+      - ./config:/config
+      - ./media:/media/frigate
+
+    ports:
+      - "8971:8971"
+      - "8554:8554"
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
+      - "1984:1984"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+
+    ports:
+      - "1883:1883"
+
+  car-counter:
+    container_name: car-counter
+    build: ./counter
+    restart: unless-stopped
+
+    depends_on:
+      - mosquitto
+
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      CAMERA: road
+      COUNT_ZONE: clean_zone
+      TZ: Europe/Bucharest
+      TIMEZONE: Europe/Bucharest
+      NIGHT_LIGHTS_ENABLED: "true"
+      NIGHT_STREAM: rtsp://frigate:8554/road
+      NIGHT_DARK_MEAN: "72"
+      NIGHT_DAY_MEAN: "90"
+      NIGHT_SWITCH_FRAMES: "24"
+      NIGHT_BRIGHT_THRESHOLD: "215"
+      NIGHT_DIM_THRESHOLD: "105"
+      NIGHT_RED_SATURATION: "70"
+      NIGHT_RED_VALUE: "75"
+      NIGHT_LINE_X: "0.29"
+
+      DB_PATH: /data/counter.db
+
+    volumes:
+      - ./counter-data:/data
+
+    ports:
+      - "8081:8080"

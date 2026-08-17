@@ -1,0 +1,50 @@
+mqtt:
+  enabled: true
+  host: mosquitto
+  port: 1883
+
+detectors:
+  cpu1:
+    type: cpu
+
+objects:
+  track:
+    - car
+  filters:
+    car:
+      min_score: 0.30
+      threshold: 0.50
+
+go2rtc:
+  streams:
+    road:
+      # Copy this file to config/config.yml and replace this URL.
+      - rtsp://USERNAME:PASSWORD@CAMERA_IP:554/STREAM_PATH
+
+cameras:
+  road:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/road
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: true
+      fps: 8
+    zones:
+      road_zone:
+        # Replace these with coordinates drawn for your camera.
+        coordinates: 0.10,0.10,0.90,0.10,0.90,0.90,0.10,0.90
+        loitering_time: 0
+        objects:
+          - car
+      clean_zone:
+        # Replace these with your counting-zone coordinates.
+        coordinates: 0.30,0.20,0.70,0.20,0.70,0.80,0.30,0.80
+        loitering_time: 0
+        objects:
+          - car
+
+version: 0.17-0
